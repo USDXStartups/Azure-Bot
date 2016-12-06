@@ -25,6 +25,35 @@ var recognizer = new builder.LuisRecognizer(model);
 var intents = new builder.IntentDialog({ recognizers: [recognizer] });
 bot.dialog('/', intents);
 
+// Create AWS lookup table
+var awsToAzure = {
+    "ec2": "[Virtual Machines](https://docs.microsoft.com/en-us/azure/virtual-machines/)",
+    "elastic block store": "[Page Blobs](https://docs.microsoft.com/en-us/azure/virtual-machines/virtual-machines-linux-about-disks-vhds?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json) or [Premium Storage](https://azure.microsoft.com/en-us/services/storage/disks/)",
+    "ebs": "[Page Blobs](https://docs.microsoft.com/en-us/azure/virtual-machines/virtual-machines-linux-about-disks-vhds?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json) or [Premium Storage](https://azure.microsoft.com/en-us/services/storage/disks/)",
+    "ec2 container service": "[Container Service](https://azure.microsoft.com/en-us/services/container-service/)",
+    "lambda": "[Functions](https://docs.microsoft.com/en-us/azure/azure-functions/index)",
+    "elastic beanstalk": "[Web Apps](https://azure.microsoft.com/en-us/services/app-service/web/)",
+    "s3": "[Blob Storage](https://azure.microsoft.com/en-us/services/app-service/web/)",
+    "elastic file system": "[File Storage](https://azure.microsoft.com/en-us/services/storage/files/)",
+    "efs": "[File Storage](https://azure.microsoft.com/en-us/services/storage/files/)",
+    "glacier": "[Backup](https://azure.microsoft.com/en-us/services/backup/) or [Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/)",
+    "storage gateway": "[StorSimple](https://azure.microsoft.com/en-us/services/storsimple/)",
+    "cloudfront": "[Content Delivery Network](https://azure.microsoft.com/en-us/services/cdn/)",
+    "vpc": "[Virtual Network](https://azure.microsoft.com/en-us/services/virtual-network/)",
+    "virtual private cloud": "[Virtual Network](https://azure.microsoft.com/en-us/services/virtual-network/)",
+    "route 53": "[DNS](https://azure.microsoft.com/en-us/services/dns/) or [Traffic Manager](https://azure.microsoft.com/en-us/services/traffic-manager/)",
+    "direct connect": "[ExpressRoute](https://azure.microsoft.com/en-us/services/expressroute/)",
+    "elastic load balancing": "[Load Balancer](https://azure.microsoft.com/en-us/services/load-balancer/) or [Application Gateway](https://azure.microsoft.com/en-us/services/application-gateway/)",
+    "rds": "[SQL Database](https://azure.microsoft.com/en-us/services/sql-database/)",
+    "dynamodb": "[DocumentDB](https://azure.microsoft.com/en-us/services/documentdb/)",
+    "redshift": "[SQL Data Warehouse](https://azure.microsoft.com/en-us/services/sql-data-warehouse/)",
+    "simpledb": "[Table Storage](https://azure.microsoft.com/en-us/services/storage/tables/)",
+    "elasticache": "[Azure Redis Cache](https://azure.microsoft.com/en-us/services/cache/)",
+    "data pipeline": "[Data Factory](https://azure.microsoft.com/en-us/services/data-factory/)",
+    "kinesis": "[Event Hubs](https://azure.microsoft.com/en-us/services/event-hubs/), [Stream Analytics](https://azure.microsoft.com/en-us/services/stream-analytics/), or [Data Lake Analytics](https://azure.microsoft.com/en-us/services/data-lake-analytics/)",
+    "simple notification service": "[Notification Hubs](https://azure.microsoft.com/en-us/services/notification-hubs/)"
+}
+
 
 intents.matches('CreateVM', [
     function (session, args, next) {
@@ -85,8 +114,20 @@ intents.matches('GetManagementInfo', [
 
 intents.matches('GetAWSTranslation', [
     function (session, args, next) {
-        //TODO: Add service-specific logic
-        session.send("Check out this [Azure and AWS](https://azure.microsoft.com/en-us/overview/azure-vs-aws/mapping/) chart where you can see what services map to what.");
+        var awsService = builder.EntityRecognizer.findEntity(args.entities, 'AWSService');
+
+        var result = "";
+        if (awsService) {
+            var entity = awsService.entity;
+            if (!(entity in awsToAzure)) {
+                result = "Check out this [Azure and AWS](https://azure.microsoft.com/en-us/overview/azure-vs-aws/mapping/) chart where you can see what services map to what.";
+            } else {
+                result = "Look into " + awsToAzure[entity] + ". Also, here's a guide for translating [Azure and AWS](https://azure.microsoft.com/en-us/overview/azure-vs-aws/mapping/)."
+            }
+        } else {
+            result = " Check out this [Azure and AWS](https://azure.microsoft.com/en-us/overview/azure-vs-aws/mapping/) chart where you can see what services map to what."
+        }
+        session.send(result);
     }
 ]);
 
